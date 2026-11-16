@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>右键菜单管理器 | Context Menu Manager Neo (CMMN)</title>
+  <meta name="description" content="专为 Windows 10/11 打造的原生 C++ 右键关联菜单管理、进程外 COM 沙箱深度探测与防篡改守护工具。">
+  <link rel="icon" type="image/png" href="app_icon.png">
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card-bg: #181b21;
+      --card-border: #2a2e39;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #388bfd;
+      --accent-hover: #58a6ff;
+      --badge-bg: #1f2937;
+      --badge-text: #93c5fd;
+      --section-border: #21262d;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f8fa;
+        --card-bg: #ffffff;
+        --card-border: #d0d7de;
+        --text: #1f2328;
+        --text-muted: #656d76;
+        --accent: #0969da;
+        --accent-hover: #0860ca;
+        --badge-bg: #ddf4ff;
+        --badge-text: #0969da;
+        --section-border: #d8dee4;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+    .container { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+    
+    /* Header & Nav */
+    header {
+      border-bottom: 1px solid var(--section-border);
+      padding: 16px 0;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+    .nav-wrapper { display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.1rem; }
+    .nav-brand img { width: 32px; height: 32px; border-radius: 6px; }
+    .nav-links { display: flex; gap: 20px; font-size: 0.95rem; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 60px 0 40px;
+      border-bottom: 1px solid var(--section-border);
+    }
+    .hero img.logo {
+      width: 96px;
+      height: 96px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      margin-bottom: 20px;
+    }
+    .hero h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+    .hero .subtitle { font-size: 1.15rem; color: var(--text-muted); margin-bottom: 24px; }
+    .hero .badges { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 30px; }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+    }
+    .hero-actions { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--accent); color: #ffffff; }
+    .btn-primary:hover { background: var(--accent-hover); text-decoration: none; }
+    .btn-secondary { background: var(--card-bg); color: var(--text); border: 1px solid var(--card-border); }
+    .btn-secondary:hover { border-color: var(--text-muted); text-decoration: none; }
+
+    /* Features Grid */
+    .section-title { font-size: 1.6rem; font-weight: 700; margin: 48px 0 20px; text-align: center; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .feature-card h3 { font-size: 1.1rem; margin-bottom: 10px; }
+    .feature-card p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* Support & Contact Card */
+    .support-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 32px;
+      margin: 40px 0;
+    }
+    .support-card h2 { font-size: 1.4rem; margin-bottom: 16px; }
+    .support-card ul { list-style: none; padding: 0; }
+    .support-card li { margin-bottom: 12px; font-size: 0.98rem; }
+    .support-card strong { display: inline-block; width: 140px; color: var(--text); }
+
+    /* Privacy Policy Section */
+    .privacy-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 36px;
+      margin: 40px 0;
+    }
+    .privacy-section h2 { font-size: 1.5rem; margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; }
+    .privacy-section h3 { font-size: 1.15rem; margin: 24px 0 10px; }
+    .privacy-section p, .privacy-section li { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 10px; }
+    .privacy-section ul { padding-left: 20px; margin-bottom: 16px; }
+
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container nav-wrapper">
+      <div class="nav-brand">
+        <img src="app_icon.png" alt="CMMN Logo">
+        <span>Context Menu Manager Neo</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#features">功能特性</a>
+        <a href="#support">技术支持 / Support</a>
+        <a href="#privacy">隐私政策 / Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <img src="app_icon.png" alt="CMMN App Logo" class="logo">
+      <h1>右键菜单管理器</h1>
+      <p class="subtitle">Context Menu Manager Neo (CMMN) · 专为 Windows 10 / 11 打造的高性能右键管理与诊断利器</p>
+      <div class="badges">
+        <span class="badge">原生 Win32 架构</span>
+        <span class="badge">100% 离线隐私保证</span>
+        <span class="badge">进程外 COM 沙箱探测</span>
+        <span class="badge">基线防篡改守护</span>
+        <span class="badge">中英双语支持</span>
+      </div>
+      <div class="hero-actions">
+        <a href="#features" class="btn btn-primary">
+          <span>了解核心特性</span>
+        </a>
+        <a href="#privacy" class="btn btn-secondary">
+          <span>查看隐私政策</span>
+        </a>
+        <a href="#support" class="btn btn-secondary">
+          <span>技术支持与反馈</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <h2 class="section-title" id="features">核心功能与技术亮点</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <h3>全场景经典右键菜单治理</h3>
+        <p>一站式管理文件、文件夹、目录背景、桌面背景、驱动器、回收站及所有对象的 Shell Verbs 与 ShellEx ContextMenuHandlers，一键启用或禁用，毫秒级生效。</p>
+      </div>
+      <div class="feature-card">
+        <h3>专用菜单与扩展定制</h3>
+        <p>完整支持“发送到 (SendTo)”、“打开方式 (OpenWith)”、“新建 (ShellNew)”、“Win+X 快捷菜单”定制，以及基于文件扩展名（File Types）的菜单项治理。</p>
+      </div>
+      <div class="feature-card">
+        <h3>进程外 COM 沙箱分析器</h3>
+        <p>在独立的 64 位与 32 位双架构原生沙箱进程 (Prober.exe) 中模拟真实文件右键，安全枚举完整菜单树与图标，彻底隔离第三方恶意扩展崩溃对主程序的影响。</p>
+      </div>
+      <div class="feature-card">
+        <h3>状态基线与防篡改审批</h3>
+        <p>自动建立注册表基线快照。当第三方软件在后台静默注入或修改右键菜单时，立即标记并送入审批队列，防止桌面右键被恶意绑定。</p>
+      </div>
+      <div class="feature-card">
+        <h3>安全备份与一键恢复</h3>
+        <p>所有禁用、重命名、参数调整及删除操作均具备本地增量快照保护，支持随时一键完全回滚，确保系统注册表万无一失。</p>
+      </div>
+      <div class="feature-card">
+        <h3>轻量纯净与现代化体验</h3>
+        <p>纯原生 C++ 构建，无繁重第三方框架依赖。完美自适应 Windows 亮暗主题与高分屏 DPI，支持中英双语界面一键平滑切换。</p>
+      </div>
+    </div>
+
+    <!-- Support & Contact -->
+    <section class="support-card" id="support">
+      <h2>技术支持与联系方式 / Support & Contact</h2>
+      <p style="color: var(--text-muted); margin-bottom: 20px;">
+        如果您在使用过程中遇到任何疑问、兼容性故障，或需要协助，欢迎通过以下官方渠道与开发者团队取得联系：
+      </p>
+      <ul>
+        <li><strong>问题反馈：</strong><a href="https://github.com/nq-tools/CMMN/issues" target="_blank" rel="noopener">GitHub Issues 报告追踪器</a></li>
+        <li><strong>技术支持：</strong><a href="mailto:frank@somedoc.com">frank@somedoc.com</a></li>
+        <li><strong>开发团队：</strong>NeoQuiver Team</li>
+      </ul>
+    </section>
+
+    <!-- Privacy Policy -->
+    <section class="privacy-section" id="privacy">
+      <h2>隐私政策 / Privacy Policy</h2>
+      <p><strong>生效日期 / Effective Date:</strong> 2026-11-14</p>
+      <p><strong>应用名称 / Application:</strong> 右键菜单管理器 / Context Menu Manager Neo (CMMN)</p>
+
+      <div style="margin-top: 24px;">
+        <h3>中文概要</h3>
+        <p><strong>100% 本地运行，零数据收集与上传：</strong>本软件是一款纯本地 Windows 桌面系统工具。不包含任何统计分析 SDK（Analytics）、崩溃遥测上报组件或广告追踪器；程序不发起任何互联网请求，在 Microsoft Store 清单中亦未声明 <code>internetClient</code> 网络权限。</p>
+        <p><strong>本地数据存储：</strong>所有界面偏好、右键菜单状态基线及操作备份均严格保存在您的本地设备中（<code>%LocalAppData%\CMMN\data</code> 或便携版的 <code>data\</code> 目录），绝不会离开您的电脑。</p>
+        <p><strong>系统权限：</strong>本软件声明 <code>runFullTrust</code>、<code>allowElevation</code> 与 <code>unvirtualizedResources</code> 仅用于读写真实的 Windows 资源管理器 Shell 注册表项并启动独立的 COM 沙箱探测子进程。</p>
+      </div>
+
+      <div style="margin-top: 32px; border-top: 1px dashed var(--card-border); padding-top: 20px;">
+        <h3>English Summary</h3>
+        <p><strong>100% Offline with Zero Telemetry:</strong> Context Menu Manager Neo (CMMN) is a standalone Windows desktop utility. It contains zero analytics SDKs, zero telemetry uploaders, and zero advertisements. It makes no internet connections and does not declare the <code>internetClient</code> capability.</p>
+        <p><strong>Local Data Storage:</strong> All settings, baselines, and backups reside strictly on your local disk (under <code>%LocalAppData%\CMMN\data</code> or the portable <code>data\</code> directory) and never leave your machine.</p>
+        <p><strong>Permissions Disclosure:</strong> Declarations of <code>runFullTrust</code>, <code>allowElevation</code>, and <code>unvirtualizedResources</code> are strictly required to read/modify real Explorer context menu registry keys and spawn the isolated prober process.</p>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <p>完整隐私协议 Markdown 文档可直接在 GitHub 仓库查看：<a href="https://github.com/nq-tools/CMMN/blob/main/PRIVACY.md" target="_blank" rel="noopener">PRIVACY.md</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2026 NeoQuiver Team. All rights reserved. Built with pride for Windows users.</p>
+      <p style="margin-top: 6px;"><a href="#features">核心功能</a> · <a href="#privacy">隐私政策</a> · <a href="#support">技术支持</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>
